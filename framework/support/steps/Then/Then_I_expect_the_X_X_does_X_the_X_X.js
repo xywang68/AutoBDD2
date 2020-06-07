@@ -1,10 +1,10 @@
 const FrameworkPath = process.env.FrameworkPath || process.env.HOME + '/Projects/AutoBDD';
 const parseExpectedText = require(FrameworkPath + '/framework/functions/common/parseExpectedText');
 const fuzz = require('fuzzball');
-module.exports = function() {
-  this.Then(
+const { Then } = require('cucumber');
+Then(
     /^I expect (?:that )?(?:the( first| last)? (\d+)(?:st|nd|rd|th)? line(?:s)? of )?the (?:"([^"]*)?" )?(image|screen area) does( not)* (contain|equal|mimic|match) the (text|regex) "(.*)?"$/,
-    {timeout: process.env.StepTimeoutInMS},
+    { timeout: 60*1000 },
     function (firstOrLast, lineCount, targetName, targetArea, falseCase, compareAction, expectType, expectedText) {
       const myExpectedText = parseExpectedText(expectedText);
       const myFirstOrLast = firstOrLast || '';
@@ -121,4 +121,3 @@ module.exports = function() {
       }
     }
   );
-}
