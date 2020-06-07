@@ -106,8 +106,6 @@ const frameworkHooks = {
     const remarkText = (process.env.SCREENREMARK == 0) ? '' : `Scenario ${currentScenarioStatus}: ${currentScenarioName}`;
     const remarkColor = (currentScenarioStatus == 'Passed') ? 'green' : 'red';
 
-    console.log(process.env.SCREENSHOT);
-
     // final screenshot and end movie with it
     if (process.env.SCREENSHOT >= 1) {
       framework_libs.takeScreenshot(currentScenarioName, currentScenarioStatus, currentStepNumber, remarkText, remarkColor, 30);
