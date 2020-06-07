@@ -22,6 +22,7 @@ nohup.out
 node_modules/
 logs/
 tmp/
+.tmp/
 .DS_Store
 .screenshots/
 .vscode/
