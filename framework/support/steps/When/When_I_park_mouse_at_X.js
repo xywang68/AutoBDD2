@@ -1,0 +1,106 @@
+module.exports = function() {
+  this.When(/^I (circle|click|expect|park|hover|shake|wave) mouse(?: (\d+) times)? at the (center|centerLeft|centerRight|bottomCenter|bottomLeft|bottomRight|previous|topCenter|topLeft|topRight|\d+,\d+) position of the screen$/,
+  {timeout: process.env.StepTimeoutInMS},
+  function (mouseAction, timesCount, screenLocation) {
+    const myDISPLAYSIZE = process.env.DISPLAYSIZE || '1920x1200';
+    const [myScreenX, myScreenY] = myDISPLAYSIZE.split('x');
+    var targetLocation = {x: 0, y: 0};
+    switch (screenLocation) {
+      case 'center':
+        targetLocation = {x: myScreenX/2, y: myScreenY/2};
+        break;
+      case 'centerLeft':
+        targetLocation = {x: 0, y: myScreenY/2};
+        break;
+      case 'centerRight':
+        targetLocation = {x: myScreenX, y: myScreenY/2};
+        break;
+      case 'bottomCenter':
+        targetLocation = {x: myScreenX/2, y: myScreenY};
+        break;
+      case 'bottomLeft':
+        targetLocation = {x: 0, y: myScreenY};
+        break;
+      case 'bottomRight':
+        targetLocation = {x: myScreenX, y: myScreenY};
+        break;
+      case 'previous':
+        const mousePos = JSON.parse(this.screen_session.getMousePos());
+        targetLocation = {x: mousePos.x, y: mousePos.y};
+        break;
+      case 'topCenter':
+        targetLocation = {x: myScreenX/2, y: 0};
+        break;
+      case 'topLeft':
+        targetLocation = {x: 0, y: 0};
+        break;
+      case 'topRight':
+        targetLocation = {x: myScreenX, y: 0};
+        break;                                 
+      default:
+        [targetLocation.x, targetLocation.y] = screenLocation.split(',');
+    }
+    var myTimesCount = timesCount || 1;
+    while (myTimesCount > 0) {
+      switch (mouseAction) {
+        case 'click':
+          this.screen_session.moveMouse(targetLocation.x, targetLocation.y);
+          this.screen_session.mouseClick('left');
+          break; 
+        case 'hoverClick':
+          this.screen_session.moveMouseSmooth(targetLocation.x, targetLocation.y);
+          this.screen_session.mouseClick('left');
+          break;
+        case 'rightClick':
+          this.screen_session.moveMouse(targetLocation.x, targetLocation.y);
+          this.screen_session.mouseClick('right');
+          break;
+        case 'dubleClick':
+          this.screen_session.moveMouse(targetLocation.x, targetLocation.y);
+          this.screen_session.mouseClick('left', true);
+          break; 
+        case 'expect':
+          const mousePos = JSON.parse(this.screen_session.getMousePos());
+          const deltaX = Math.abs(mousePos.x - targetLocation.x);
+          const deltaY = Math.abs(mousePos.y - targetLocation.y);
+          expect(deltaX).not.toBeGreaterThan(5);
+          expect(deltaY).not.toBeGreaterThan(5);
+          break;
+        case 'move':
+        case 'park':
+          console.log(`parking mouse to ${JSON.stringify(targetLocation)}`);
+          this.screen_session.moveMouse(targetLocation.x, targetLocation.y);
+          break;
+        case 'hover':
+          console.log(`hovering mouse to ${JSON.stringify(targetLocation)}`);
+          this.screen_session.moveMouseSmooth(targetLocation.x, targetLocation.y);
+          break;
+        case "wave":
+          this.screen_session.moveMouse(targetLocation.x - 50, targetLocation.y);
+          this.screen_session.moveMouse(targetLocation.x + 50, targetLocation.y);
+          this.screen_session.moveMouse(targetLocation.x - 50, targetLocation.y);
+          this.screen_session.moveMouse(targetLocation.x + 50, targetLocation.y);
+          break;
+        case "shake":
+          this.screen_session.moveMouse(targetLocation.x, targetLocation.y - 50);
+          this.screen_session.moveMouse(targetLocation.x, targetLocation.y + 50);
+          this.screen_session.moveMouse(targetLocation.x, targetLocation.y - 50);
+          this.screen_session.moveMouse(targetLocation.x, targetLocation.y + 50);
+          break;
+        case "circle":
+          const delta_50 =  50 / Math.sqrt(2);
+          this.screen_session.moveMouseSmooth(targetLocation.x, targetLocation.y - 50);
+          this.screen_session.moveMouseSmooth(targetLocation.x + delta_50, targetLocation.y - delta_50);
+          this.screen_session.moveMouseSmooth(targetLocation.x + 50, targetLocation.y);
+          this.screen_session.moveMouseSmooth(targetLocation.x + delta_50, targetLocation.y + delta_50);
+          this.screen_session.moveMouseSmooth(targetLocation.x, targetLocation.y + 50);
+          this.screen_session.moveMouseSmooth(targetLocation.x - delta_50, targetLocation.y + delta_50);
+          this.screen_session.moveMouseSmooth(targetLocation.x - 50, targetLocation.y);
+          this.screen_session.moveMouseSmooth(targetLocation.x - delta_50, targetLocation.y - delta_50);
+          this.screen_session.moveMouseSmooth(targetLocation.x, targetLocation.y - 50);
+          break;
+      }
+      myTimesCount--;
+    }
+  });
+}

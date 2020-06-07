@@ -1,0 +1,5 @@
+**/.git
+**/node_modules
+**/bdd_reports
+test-projects/*
+!test-projects/simple-test/
