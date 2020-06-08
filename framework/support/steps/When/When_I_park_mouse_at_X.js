@@ -2,7 +2,7 @@ const { When } = require('cucumber');
 When(/^I (circle|click|expect|park|hover|shake|wave) mouse(?: (\d+) times)? at the (center|centerLeft|centerRight|bottomCenter|bottomLeft|bottomRight|previous|topCenter|topLeft|topRight|\d+,\d+) position of the screen$/,
   { timeout: 60*1000 },
   function (mouseAction, timesCount, screenLocation) {
-    const myDISPLAYSIZE = process.env.DISPLAYSIZE || '1920x1200';
+    const myDISPLAYSIZE = process.env.DISPLAYSIZE;
     const [myScreenX, myScreenY] = myDISPLAYSIZE.split('x');
     var targetLocation = {x: 0, y: 0};
     switch (screenLocation) {
