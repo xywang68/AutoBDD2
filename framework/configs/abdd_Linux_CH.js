@@ -1,6 +1,7 @@
 const FrameworkPath = process.env.FrameworkPath;
 const ProjectPath = process.env.PROJECTRUNPATH
 const myDISPLAYSIZE = process.env.DISPLAYSIZE;
+const myREPORTDIR = process.env.REPORTDIR || '.';
 const fs = require('fs');
 const path = require('path');
 const { hooks } = require(`${FrameworkPath}/framework/support/module_hooks.js`);
@@ -176,7 +177,12 @@ exports.config = {
     // Test reporter for stdout.
     // The only one supported by default is 'dot'
     // see also: https://webdriver.io/docs/dot-reporter.html
-    reporters: ['spec'],
+    reporters: ['spec',
+                [ 'cucumberjs-json', {
+                    jsonFolder: `${myREPORTDIR}/.tmp`,
+                    language: 'en'}
+                ]
+    ],
     //
     // If you are using Cucumber you need to specify the location of your step definitions.
     cucumberOpts: {
