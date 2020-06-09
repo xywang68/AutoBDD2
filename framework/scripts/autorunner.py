@@ -21,178 +21,6 @@ from tinydb import TinyDB, Query
 import shlex
 from pprint import pprint
 
-def definepath (case, project_name, report_dir_base):
-    uri_array = case['uri'].split('/')
-    del uri_array[:len(uri_array) - uri_array[::-1].index(project_name)]   # remove any path before project_name inclusive
-    run_feature = '/'.join(uri_array)
-
-    # use /features/ as the divider between module_path and feature_path
-    module_path_array = uri_array[:uri_array.index('features')]
-    feature_path_array = uri_array[uri_array.index('features'):]
-
-    # clear extra path typically for Java projects
-    if 'src' in module_path_array: module_path_array.remove('src')              # remove src
-    if 'main' in module_path_array: module_path_array.remove('main')            # remove main
-    if 'test' in module_path_array: module_path_array.remove('test')            # remove test
-    if 'resources' in module_path_array: module_path_array.remove('resources')  # remove resources
-
-    module_path = '/'.join(module_path_array)   # relative path to module
-    module_name = module_path_array[0]          # module_name is the first level of module path
-    feature_name = feature_path_array.pop()     # 1. get feature file name, 2. reduce file name from feature_path_array
-    feature_path = '/'.join(feature_path_array) # relative path to feature without feature file
-
-    report_dir_relative = module_path
-    report_dir_full = path.join(report_dir_base, report_dir_relative)
-
-    if not path.exists(report_dir_full):
-        os.makedirs(report_dir_full)
-    
-    result_base = path.join(report_dir_full)
-    result_json = result_base + '/.tmp/' + feature_name.replace('_', '-').replace('.feature', '').lower() + '.json'
-    result_run  = result_base + '/' + feature_name.lower() + '.run'
-
-    # Handle space in feature_fil e
-    run_feature = run_feature.replace(' ', '\ ' )
-
-    # print(module_path, module_name, feature_path, feature_name, result_json, result_run, report_dir_relative)
-    return module_path, module_name, feature_path, feature_name, result_json, result_run, report_dir_relative
-
-def run_test(FrameworkPath,
-              host,
-              platform,
-              browser,
-              project_base,
-              project_name,
-              module_full_path,
-              feature_file,
-              movie,
-              screenshot,
-              screenremark,
-              debugmode,
-              display_size,
-              abdd_profile,
-              isMaven,
-              argstring,
-              report_dir_base,
-              report_dir_relative,
-              result_json,
-              result_run):
-    ''' Run Test'''
-    cmd = ''
-    run_feature = path.join(module_full_path, feature_file)
-    if platform == 'Linux':
-        if isMaven: #isMaven on Linux
-            cmd = 'cd ' + module_full_path + ';' + \
-                ' PROJECTBASE=' + project_base + \
-                ' PROJECTNAME=' + project_name + \
-                ' REPORTDIR=' + report_dir_base + '/' + report_dir_relative + \
-                ' RELATIVEREPORTDIR=' + report_dir_relative + \
-                ' MOVIE=' + movie + \
-                ' SCREENSHOT=' + screenshot + \
-                ' SCREENREMARK=' + screenremark + \
-                ' BROWSER=' + browser + \
-                ' DEBUGMODE=' + debugmode +  \
-                ' DISPLAYSIZE=' + display_size + \
-                ' PLATFORM=' + platform + \
-                ' RUNREPORT=' + os.path.basename(result_run) + \
-                ' ' + FrameworkPath + '/fr amework/scripts/xvfb-run-safe.sh --server-args=\"-screen 0 ' + display_size + 'x24\"' + \
-                ' mvn clean test -Dbrow ser=\"chrome\" -Dcucumber.options=\"'  + feature_file + \
-                ' --plugin pretty --add-plugin json:' + result_json + \
-                ' 2>&1 > ' + result_run + ';' + \
-                ' cat ' + result_run + ' | ansi2html > ' + result_run + '.html'
-        else: #isAbdd on Linux
-            cmd = 'cd ' + module_full_path + ';' + \
-                ' PROJECTBASE=' + project_base + \
-                ' PROJECTNAME=' + project_name + \
-                ' REPORTDIR=' + report_dir_base + '/' + report_dir_relative + \
-                ' RELATIVEREPORTDIR=' + report_dir_relative + \
-                ' MOVIE=' + movie + \
-                ' SCREENSHOT=' + screenshot + \
-                ' SCREENREMARK=' + screenremark + \
-                ' BROWSER=' + browser + \
-                ' DEBUGMODE=' + debugmode +  \
-                ' DISPLAYSIZE=' + display_size + \
-                ' PLATFORM=' + platform + \
-                ' RUNREPORT=' + os.path.basename(result_run) + \
-                ' ' + FrameworkPath + '/framework/scripts/xvfb-run-safe.sh --server-args="-screen 0 ' + display_size + 'x24"' + \
-                ' npx wdio ' + abdd_profile + ' ' + feature_file + \
-                ' --reporters=cucumberjs-json' + \
-                ' ' + argstring + \
-                ' 2>&1 > ' + result_run + ';' + \
-                ' cat ' + result_run + ' | ansi2html > ' + result_run + '.html'
-    elif platform == 'Win7' or platform == 'Win10':
-        if isMaven: #isMaven on Windows
-            for rdp in host:
-                cmd = ''
-                lock_file = ''
-                time.sleep(random.uniform(0, 3))
-                # avoid different process using same SSH PORT simultaneously
-                lock_file = '/tmp/rdesktop.' + rdp['SSHHOST'] + ':' + rdp[
-                    'SSHPORT'] + '.lock'
-                if not os.path.exists(lock_file):
-                    open(lock_file, 'a').close()
-                    print(' > Running remote Maven command:')
-                    cmd = 'cd ' + module_full_path + ';' + \
-                        ' PROJECTBASE=' + project_base + \
-                        ' PROJECTNAME=' + project_name + \
-                        ' REPORTDIR=' + report_dir_base + '/' + report_dir_relative + \
-                        ' RELATIVEREPORTDIR=' + report_dir_relative + \
-                        ' MOVIE=' + movie + \
-                        ' SCREENSHOT=' + screenshot + \
-                        ' SCREENREMARK=' + screenremark + \
-                        ' DEBUGMODE=' + debugmode + \
-                        ' BROWSER=' + browser + \
-                        ' DISPLAYSIZE=' + display_size + \
-                        ' PLATFORM=' + platform +  \
-                        ' SSHHOST=' + rdp['SSHHOST'] + \
-                        ' SSHPORT=' + rdp['SSHPORT'] + \
-                        ' RUNREPORT=' + os.path.basename(result_run) + \
-                        ' ' + FrameworkPath + '/fr amework/scripts/xvfb-run-safe.sh --server-args="-screen 0 ' + display_size + 'x24"' + \
-                        ' mvn clean test -Dbrow ser=\"chrome\" -Dcucumber.options=\"'  + feature_file + \
-                        ' --plugin pretty --add-plugin json:' + result_json + \
-                        ' 2>&1 > ' + result_run + ';' + \
-                        ' cat ' + result_run + ' | ansi2html > ' + result_run + '.html'
-                    break
-        else: #isAbdd on Windows
-            for rdp in host:
-                cmd = ''
-                lock_file = ''
-                time.sleep(random.uniform(0, 3))
-                # avoid different process using same SSH PORT simultaneously
-                lock_file = '/tmp/rdesktop.' + rdp['SSHHOST'] + ':' + rdp[
-                    'SSHPORT'] + '.lock'
-                if not os.path.exists(lock_file):
-                    open(lock_file, 'a').close()
-                    cmd = 'cd ' + module_full_path + ';' + \
-                        ' PROJECTBASE=' + project_base + \
-                        ' PROJECTNAME=' + project_name + \
-                        ' REPORTDIR=' + report_dir_base + '/' + report_dir_relative + \
-                        ' RELATIVEREPORTDIR=' + report_dir_relative + \
-                        ' MOVIE=' + movie + \
-                        ' SCREENSHOT=' + screenshot + \
-                        ' SCREENREMARK=' + screenremark + \
-                        ' DEBUGMODE=' + debugmode + \
-                        ' BROWSER=' + browser + \
-                        ' DISPLAYSIZE=' + display_size + \
-                        ' PLATFORM=' + platform +  \
-                        ' SSHHOST=' + rdp['SSHHOST'] + \
-                        ' SSHPORT=' + rdp['SSHPORT'] + \
-                        ' RUNREPORT=' + os.path.basename(result_run) + \
-                        ' ' + FrameworkPath + '/framework/scripts/xvfb-run-safe.sh --server-args="-screen 0 ' + display_size + 'x24"' + \
-                        ' npx wdio ' + abdd_profile + ' ' + feature_file + \
-                        ' --reporters=cucumberjs-json' + \
-                        ' ' + argstring + \
-                        ' 2>&1 > ' + result_run + ';' + \
-                        ' cat ' + result_run + ' | ansi2html > ' + result_run + '.html'
-                    break
-    else:
-        assert False, 'Can not process on {}'.format(platform)
-
-    print('\nRunning: {}'.format(run_feature))
-    print('Command: {}\n'.format(cmd))
-    os.system(cmd)
-    return run_feature
-
 def parse_arguments():
     '''
     parse command line arguments
@@ -351,14 +179,6 @@ def parse_arguments():
     )
 
     parser.add_argument(
-        "--argstring",
-        "--ARGSTRING",
-        dest="ARGSTRING",
-        default='',
-        help="Additoinal Cucumber Args in a quoted string"
-    )
-
-    parser.add_argument(
         "--projecttype",
         "--PROJECTTYPE",
         dest="PROJECTTYPE",
@@ -372,14 +192,190 @@ def parse_arguments():
         '--version',
         '-v',
         action='version',
-        version='%(prog)s V1.0'
+        version='%(prog)s V2.0'
     )
 
+    parser.add_argument('RUNNER_ARGS', nargs=argparse.REMAINDER)
+
     args = parser.parse_args()
+
     if len(sys.argv) > 1:
         if sys.argv[1].startswith('+'):
             args = parser.parse_args(shlex.split(open(sys.argv[1][1:]).read()))
+    
     return args
+
+def definepath (case, project_name, report_dir_base):
+    uri_array = case['uri'].split('/')
+    del uri_array[:len(uri_array) - uri_array[::-1].index(project_name)]   # remove any path before project_name inclusive
+    run_feature = '/'.join(uri_array)
+
+    # use /features/ as the divider between module_path and feature_path
+    module_path_array = uri_array[:uri_array.index('features')]
+    feature_path_array = uri_array[uri_array.index('features'):]
+
+    # clear extra path typically for Java projects
+    if 'src' in module_path_array: module_path_array.remove('src')              # remove src
+    if 'main' in module_path_array: module_path_array.remove('main')            # remove main
+    if 'test' in module_path_array: module_path_array.remove('test')            # remove test
+    if 'resources' in module_path_array: module_path_array.remove('resources')  # remove resources
+
+    module_path = '/'.join(module_path_array)   # relative path to module
+    module_name = module_path_array[0]          # module_name is the first level of module path
+    feature_name = feature_path_array.pop()     # 1. get feature file name, 2. reduce file name from feature_path_array
+    feature_path = '/'.join(feature_path_array) # relative path to feature without feature file
+
+    report_dir_relative = module_path
+    report_dir_full = path.join(report_dir_base, report_dir_relative)
+
+    if not path.exists(report_dir_full):
+        os.makedirs(report_dir_full)
+    
+    result_base = path.join(report_dir_full)
+    result_json = result_base + '/.tmp/' + feature_name.replace('_', '-').replace('.feature', '').lower() + '.json'
+    result_run  = result_base + '/' + feature_name.lower() + '.run'
+
+    # Handle space in feature_file
+    run_feature = run_feature.replace(' ', r'\ ' )
+
+    # print(module_path, module_name, feature_path, feature_name, result_json, result_run, report_dir_relative)
+    return module_path, module_name, feature_path, feature_name, result_json, result_run, report_dir_relative
+
+def run_test(FrameworkPath,
+              host,
+              platform,
+              browser,
+              project_base,
+              project_name,
+              module_full_path,
+              feature_file,
+              movie,
+              screenshot,
+              screenremark,
+              debugmode,
+              display_size,
+              abdd_profile,
+              isMaven,
+              runner_args,
+              report_dir_base,
+              report_dir_relative,
+              result_json,
+              result_run):
+    ''' Run Test'''
+    cmd = ''
+    run_feature = path.join(module_full_path, feature_file)
+    if platform == 'Linux':
+        if isMaven: #isMaven on Linux
+            cmd = 'cd ' + module_full_path + ';' + \
+                ' PROJECTBASE=' + project_base + \
+                ' PROJECTNAME=' + project_name + \
+                ' REPORTDIR=' + report_dir_base + '/' + report_dir_relative + \
+                ' RELATIVEREPORTDIR=' + report_dir_relative + \
+                ' MOVIE=' + movie + \
+                ' SCREENSHOT=' + screenshot + \
+                ' SCREENREMARK=' + screenremark + \
+                ' BROWSER=' + browser + \
+                ' DEBUGMODE=' + debugmode +  \
+                ' DISPLAYSIZE=' + display_size + \
+                ' PLATFORM=' + platform + \
+                ' RUNREPORT=' + os.path.basename(result_run) + \
+                ' ' + FrameworkPath + '/fr amework/scripts/xvfb-run-safe.sh --server-args=\"-screen 0 ' + display_size + 'x24\"' + \
+                ' mvn clean test -Dbrow ser=\"chrome\" -Dcucumber.options=\"'  + feature_file + \
+                ' --plugin pretty --add-plugin json:' + result_json + \
+                ' 2>&1 > ' + result_run + ';' + \
+                ' cat ' + result_run + ' | ansi2html > ' + result_run + '.html'
+        else: #isAbdd on Linux
+            cmd = 'cd ' + module_full_path + ';' + \
+                ' PROJECTBASE=' + project_base + \
+                ' PROJECTNAME=' + project_name + \
+                ' REPORTDIR=' + report_dir_base + '/' + report_dir_relative + \
+                ' RELATIVEREPORTDIR=' + report_dir_relative + \
+                ' MOVIE=' + movie + \
+                ' SCREENSHOT=' + screenshot + \
+                ' SCREENREMARK=' + screenremark + \
+                ' BROWSER=' + browser + \
+                ' DEBUGMODE=' + debugmode +  \
+                ' DISPLAYSIZE=' + display_size + \
+                ' PLATFORM=' + platform + \
+                ' RUNREPORT=' + os.path.basename(result_run) + \
+                ' ' + FrameworkPath + '/framework/scripts/xvfb-run-safe.sh --server-args="-screen 0 ' + display_size + 'x24"' + \
+                ' npx wdio ' + abdd_profile + ' ' + feature_file + \
+                ' --reporters=cucumberjs-json' + \
+                ' ' + runner_args + \
+                ' 2>&1 > ' + result_run + ';' + \
+                ' cat ' + result_run + ' | ansi2html > ' + result_run + '.html'
+    elif platform == 'Win7' or platform == 'Win10':
+        if isMaven: #isMaven on Windows
+            for rdp in host:
+                cmd = ''
+                lock_file = ''
+                time.sleep(random.uniform(0, 3))
+                # avoid different process using same SSH PORT simultaneously
+                lock_file = '/tmp/rdesktop.' + rdp['SSHHOST'] + ':' + rdp[
+                    'SSHPORT'] + '.lock'
+                if not os.path.exists(lock_file):
+                    open(lock_file, 'a').close()
+                    print(' > Running remote Maven command:')
+                    cmd = 'cd ' + module_full_path + ';' + \
+                        ' PROJECTBASE=' + project_base + \
+                        ' PROJECTNAME=' + project_name + \
+                        ' REPORTDIR=' + report_dir_base + '/' + report_dir_relative + \
+                        ' RELATIVEREPORTDIR=' + report_dir_relative + \
+                        ' MOVIE=' + movie + \
+                        ' SCREENSHOT=' + screenshot + \
+                        ' SCREENREMARK=' + screenremark + \
+                        ' DEBUGMODE=' + debugmode + \
+                        ' BROWSER=' + browser + \
+                        ' DISPLAYSIZE=' + display_size + \
+                        ' PLATFORM=' + platform +  \
+                        ' SSHHOST=' + rdp['SSHHOST'] + \
+                        ' SSHPORT=' + rdp['SSHPORT'] + \
+                        ' RUNREPORT=' + os.path.basename(result_run) + \
+                        ' ' + FrameworkPath + '/fr amework/scripts/xvfb-run-safe.sh --server-args="-screen 0 ' + display_size + 'x24"' + \
+                        ' mvn clean test -Dbrow ser=\"chrome\" -Dcucumber.options=\"'  + feature_file + \
+                        ' --plugin pretty --add-plugin json:' + result_json + \
+                        ' 2>&1 > ' + result_run + ';' + \
+                        ' cat ' + result_run + ' | ansi2html > ' + result_run + '.html'
+                    break
+        else: #isAbdd on Windows
+            for rdp in host:
+                cmd = ''
+                lock_file = ''
+                time.sleep(random.uniform(0, 3))
+                # avoid different process using same SSH PORT simultaneously
+                lock_file = '/tmp/rdesktop.' + rdp['SSHHOST'] + ':' + rdp[
+                    'SSHPORT'] + '.lock'
+                if not os.path.exists(lock_file):
+                    open(lock_file, 'a').close()
+                    cmd = 'cd ' + module_full_path + ';' + \
+                        ' PROJECTBASE=' + project_base + \
+                        ' PROJECTNAME=' + project_name + \
+                        ' REPORTDIR=' + report_dir_base + '/' + report_dir_relative + \
+                        ' RELATIVEREPORTDIR=' + report_dir_relative + \
+                        ' MOVIE=' + movie + \
+                        ' SCREENSHOT=' + screenshot + \
+                        ' SCREENREMARK=' + screenremark + \
+                        ' DEBUGMODE=' + debugmode + \
+                        ' BROWSER=' + browser + \
+                        ' DISPLAYSIZE=' + display_size + \
+                        ' PLATFORM=' + platform +  \
+                        ' SSHHOST=' + rdp['SSHHOST'] + \
+                        ' SSHPORT=' + rdp['SSHPORT'] + \
+                        ' RUNREPORT=' + os.path.basename(result_run) + \
+                        ' ' + FrameworkPath + '/framework/scripts/xvfb-run-safe.sh --server-args="-screen 0 ' + display_size + 'x24"' + \
+                        ' npx wdio ' + abdd_profile + ' ' + feature_file + \
+                        ' --reporters=cucumberjs-json' + \
+                        ' ' + runner_args + \
+                        ' 2>&1 > ' + result_run + ';' + \
+                        ' cat ' + result_run + ' | ansi2html > ' + result_run + '.html'
+                    break
+    else:
+        assert False, 'Can not process on {}'.format(platform)
+
+    print('\nRunning: {}'.format(run_feature))
+    print('Command: {}\n'.format(cmd))
+    os.system(cmd)
+    return run_feature
 
 def get_scenario_status(scenario_out):
     scenario = json.loads(open(scenario_out).read(), encoding='utf-8')
@@ -428,7 +424,10 @@ class AbddAutoRun:
             (self.project, self.runtime_stamp))
 
         self.modulelist = arguments.MODULELIST
-        self.argstring = arguments.ARGSTRING
+        runner_args = arguments.RUNNER_ARGS
+        self.cucumberjs_dryrun_args = ' '.join([w.replace('cucumberOpts.', '').replace('tagExpress', 'tags').replace('=', '=\"') + '\"' for w in runner_args[1:]])
+        self.wdio_run_args = ' '.join([w.replace('=', '=\"') + '\"' for w in runner_args[1:]])
+
         self.display_size = '1920x1200'
 
         self.project_full_path = path.join(self.FrameworkPath, self.projectbase, self.project)
@@ -479,7 +478,7 @@ class AbddAutoRun:
         from autorunner_dryrun import AbddDryRun
         dry_run = AbddDryRun(self.projectbase, self.project,
                                 self.modulelist, self.platform, self.browser,
-                                self.argstring, self.report_full_path)
+                                self.cucumberjs_dryrun_args, self.report_full_path)
         self.run_json = dry_run.create_run_json()
         return self.run_json
         
@@ -597,7 +596,7 @@ class AbddAutoRun:
             '--testThreads=' + self.parallel + ' ' + \
             '--testStartTime=' + self.runtime_stamp + ' ' + \
             '--testRunDuration=' + run_duration + ' ' + \
-            '--testRunArgs="' + self.argstring + '"'
+            '--testRunnerArgs="' + self.wdio_run_args + '"'
         print('Generate HTML Report On: {}'.format(report_html_path))
         print(cmd_generate_html_report)
         os.system(cmd_generate_html_report)
@@ -676,7 +675,7 @@ class AbddAutoRun:
                                                     self.display_size,
                                                     self.abdd_profile,
                                                     self.isMaven,
-                                                    self.argstring,
+                                                    self.wdio_run_args,
                                                     self.report_dir_base,
                                                     report_dir_relative,
                                                     result_json,
