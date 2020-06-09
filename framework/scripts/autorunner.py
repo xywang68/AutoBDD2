@@ -38,8 +38,8 @@ def definepath (case, project_name, report_dir_base):
 
     module_path = '/'.join(module_path_array)   # relative path to module
     module_name = module_path_array[0]          # module_name is the first level of module path
-    feature_path = '/'.join(feature_path_array) # relative path to feature including feature file
-    feature_name = feature_path_array[-1]       # feature file name
+    feature_name = feature_path_array.pop()     # 1. get feature file name, 2. reduce file name from feature_path_array
+    feature_path = '/'.join(feature_path_array) # relative path to feature without feature file
 
     report_dir_relative = module_path
     report_dir_full = path.join(report_dir_base, report_dir_relative)
@@ -47,14 +47,15 @@ def definepath (case, project_name, report_dir_base):
     if not path.exists(report_dir_full):
         os.makedirs(report_dir_full)
     
-    run_result = path.join(report_dir_full, re.sub('[^A-Za-z0-9\-\.]+', '_', feature_path)) + '.subjson'
-    run_report = path.join(report_dir_full, re.sub('[^A-Za-z0-9\-\.]+', '_', feature_path)) + '.run'
+    result_base = path.join(report_dir_full)
+    result_json = result_base + '/.tmp/' + feature_name.replace('_', '-').replace('.feature', '').lower() + '.json'
+    result_run  = result_base + '/' + feature_name.lower() + '.run'
 
-    # Handle space in feature_file
-    run_feature = run_feature.replace(' ', '\ ')
+    # Handle space in feature_fil e
+    run_feature = run_feature.replace(' ', '\ ' )
 
-    # print(module_path, module_name, feature_path, feature_name, run_result, run_report, report_dir_relative)
-    return module_path, module_name, feature_path, feature_name, run_result, run_report, report_dir_relative
+    # print(module_path, module_name, feature_path, feature_name, result_json, result_run, report_dir_relative)
+    return module_path, module_name, feature_path, feature_name, result_json, result_run, report_dir_relative
 
 def run_test(FrameworkPath,
               host,
@@ -74,8 +75,8 @@ def run_test(FrameworkPath,
               argstring,
               report_dir_base,
               report_dir_relative,
-              run_result,
-              run_report):
+              result_json,
+              result_run):
     ''' Run Test'''
     cmd = ''
     run_feature = path.join(module_full_path, feature_file)
@@ -90,15 +91,15 @@ def run_test(FrameworkPath,
                 ' SCREENSHOT=' + screenshot + \
                 ' SCREENREMARK=' + screenremark + \
                 ' BROWSER=' + browser + \
-                ' DEBUGMODE=' + debugmode + \
+                ' DEBUGMODE=' + debugmode +  \
                 ' DISPLAYSIZE=' + display_size + \
                 ' PLATFORM=' + platform + \
-                ' RUNREPORT=' + os.path.basename(run_report) + \
-                ' ' + FrameworkPath + '/framework/scripts/xvfb-run-safe.sh --server-args=\"-screen 0 ' + display_size + 'x24\"' + \
-                ' mvn clean test -Dbrowser=\"chrome\" -Dcucumber.options=\"' + feature_file + \
-                ' --plugin pretty --add-plugin json:' + run_result + \
-                ' 2>&1 > ' + run_report + ';' + \
-                ' cat ' + run_report + ' | ansi2html > ' + run_report + '.html'
+                ' RUNREPORT=' + os.path.basename(result_run) + \
+                ' ' + FrameworkPath + '/fr amework/scripts/xvfb-run-safe.sh --server-args=\"-screen 0 ' + display_size + 'x24\"' + \
+                ' mvn clean test -Dbrow ser=\"chrome\" -Dcucumber.options=\"'  + feature_file + \
+                ' --plugin pretty --add-plugin json:' + result_json + \
+                ' 2>&1 > ' + result_run + ';' + \
+                ' cat ' + result_run + ' | ansi2html > ' + result_run + '.html'
         else: #isAbdd on Linux
             cmd = 'cd ' + module_full_path + ';' + \
                 ' PROJECTBASE=' + project_base + \
@@ -109,16 +110,16 @@ def run_test(FrameworkPath,
                 ' SCREENSHOT=' + screenshot + \
                 ' SCREENREMARK=' + screenremark + \
                 ' BROWSER=' + browser + \
-                ' DEBUGMODE=' + debugmode + \
+                ' DEBUGMODE=' + debugmode +  \
                 ' DISPLAYSIZE=' + display_size + \
                 ' PLATFORM=' + platform + \
-                ' RUNREPORT=' + os.path.basename(run_report) + \
+                ' RUNREPORT=' + os.path.basename(result_run) + \
                 ' ' + FrameworkPath + '/framework/scripts/xvfb-run-safe.sh --server-args="-screen 0 ' + display_size + 'x24"' + \
                 ' npx wdio ' + abdd_profile + ' ' + feature_file + \
                 ' --reporters=cucumberjs-json' + \
                 ' ' + argstring + \
-                ' 2>&1 > ' + run_report + ';' + \
-                ' cat ' + run_report + ' | ansi2html > ' + run_report + '.html'
+                ' 2>&1 > ' + result_run + ';' + \
+                ' cat ' + result_run + ' | ansi2html > ' + result_run + '.html'
     elif platform == 'Win7' or platform == 'Win10':
         if isMaven: #isMaven on Windows
             for rdp in host:
@@ -142,15 +143,15 @@ def run_test(FrameworkPath,
                         ' DEBUGMODE=' + debugmode + \
                         ' BROWSER=' + browser + \
                         ' DISPLAYSIZE=' + display_size + \
-                        ' PLATFORM=' + platform + \
+                        ' PLATFORM=' + platform +  \
                         ' SSHHOST=' + rdp['SSHHOST'] + \
                         ' SSHPORT=' + rdp['SSHPORT'] + \
-                        ' RUNREPORT=' + os.path.basename(run_report) + \
-                        ' ' + FrameworkPath + '/framework/scripts/xvfb-run-safe.sh --server-args="-screen 0 ' + display_size + 'x24"' + \
-                        ' mvn clean test -Dbrowser=\"chrome\" -Dcucumber.options=\"' + feature_file + \
-                        ' --plugin pretty --add-plugin json:' + run_result + \
-                        ' 2>&1 > ' + run_report + ';' + \
-                        ' cat ' + run_report + ' | ansi2html > ' + run_report + '.html'
+                        ' RUNREPORT=' + os.path.basename(result_run) + \
+                        ' ' + FrameworkPath + '/fr amework/scripts/xvfb-run-safe.sh --server-args="-screen 0 ' + display_size + 'x24"' + \
+                        ' mvn clean test -Dbrow ser=\"chrome\" -Dcucumber.options=\"'  + feature_file + \
+                        ' --plugin pretty --add-plugin json:' + result_json + \
+                        ' 2>&1 > ' + result_run + ';' + \
+                        ' cat ' + result_run + ' | ansi2html > ' + result_run + '.html'
                     break
         else: #isAbdd on Windows
             for rdp in host:
@@ -173,16 +174,16 @@ def run_test(FrameworkPath,
                         ' DEBUGMODE=' + debugmode + \
                         ' BROWSER=' + browser + \
                         ' DISPLAYSIZE=' + display_size + \
-                        ' PLATFORM=' + platform + \
+                        ' PLATFORM=' + platform +  \
                         ' SSHHOST=' + rdp['SSHHOST'] + \
                         ' SSHPORT=' + rdp['SSHPORT'] + \
-                        ' RUNREPORT=' + os.path.basename(run_report) + \
+                        ' RUNREPORT=' + os.path.basename(result_run) + \
                         ' ' + FrameworkPath + '/framework/scripts/xvfb-run-safe.sh --server-args="-screen 0 ' + display_size + 'x24"' + \
                         ' npx wdio ' + abdd_profile + ' ' + feature_file + \
                         ' --reporters=cucumberjs-json' + \
                         ' ' + argstring + \
-                        ' 2>&1 > ' + run_report + ';' + \
-                        ' cat ' + run_report + ' | ansi2html > ' + run_report + '.html'
+                        ' 2>&1 > ' + result_run + ';' + \
+                        ' cat ' + result_run + ' | ansi2html > ' + result_run + '.html'
                     break
     else:
         assert False, 'Can not process on {}'.format(platform)
@@ -549,11 +550,12 @@ class AbddAutoRun:
             reportList = group.search(query.status != 'crashed')
             feature_report = None
             for item in reportList:
-                element = json.loads(open(item['run_result'], encoding='utf-8').read())[0]
+                element = json.loads(open(item['result_json'], encoding='utf-8').read())[0]
                 if not feature_report:
                     feature_report = element
                 else:
                     feature_report['elements'].append(element['elements'][0])
+                os.rename(item['result_json'], item['result_json'] + '.processed')
             if feature_report is not None:
                 cucumber_report_json.append(feature_report)
         db.close()
@@ -652,13 +654,13 @@ class AbddAutoRun:
             case  = None
             runList = group.search((query.status == 'notrun') | (query.status == 'rerun'))
             runCount += len(runList)
-            if len(runList) > 0:
+            if len(runList) > 0 :
                 case = runList[0]
                 if case.doc_id:
-                    module_path, module_name, feature_path, feature_name, run_result, run_report, report_dir_relative = definepath(
+                    module_path, module_name, feature_path, feature_name, result_json, result_run , report_dir_relative = definepath(
                     case, self.project, self.report_dir_base)
                     module_full_path = path.join(self.projectbase, self.project, module_path)
-                    group.update({'status': 'running', 'run_result': run_result, 'run_report': run_report}, doc_ids=[case.doc_id])
+                    group.update({'status': 'running', 'result_json': result_json, 'result_run': result_run}, doc_ids=[case.doc_id])
                     r = pool.apply_async(run_test,  args=(self.FrameworkPath,
                                                     self.host,
                                                     self.platform,
@@ -677,8 +679,8 @@ class AbddAutoRun:
                                                     self.argstring,
                                                     self.report_dir_base,
                                                     report_dir_relative,
-                                                    run_result,
-                                                    run_report))
+                                                    result_json,
+                                                    result_run))
                     progress.append(r)
                 else:
                     break
@@ -698,10 +700,10 @@ class AbddAutoRun:
                         runList = group.search(query.status == 'running')
                         for case in runList:
                             if done_feature in case['uri']:
-                                if os.path.exists(case['run_result']) and os.path.getsize(case['run_result']) > 0:
+                                if os.path.exists(case['result_json']) and os.path.getsize(case['result_json']) > 0:
                                     resultString = ''
                                     failedString = '"status": "failed"'
-                                    with open(case['run_result'], encoding='utf-8') as f:
+                                    with open(case['result_json'], encoding='utf-8') as f:
                                         resultString = f.read()
                                     if (resultString.find(failedString) >= 0):
                                         group.update({'status': 'failed'}, doc_ids=[case.doc_id])
