@@ -9,10 +9,6 @@
   },
   "main": "index.js",
   "dependencies": {
-    "@babel/core": "^7.10.2",
-    "@babel/register": "^7.10.1",
-    "@wdio/cli": "^6.1.16",
-    "@wdio/dot-reporter": "^6.1.14",
     "ajv": "^6.12.2",
     "assert": "^2.0.0",
     "bottleneck": ">=2.19.5",
@@ -67,6 +63,10 @@
   "author": "xyteam",
   "license": "ISC",
   "devDependencies": {
+    "@babel/core": "^7.10.2",
+    "@babel/register": "^7.10.1",
+    "@wdio/cli": "^6.1.16",
+    "@wdio/dot-reporter": "^6.1.14",
     "@rpii/wdio-html-reporter": "^6.0.4",
     "@wdio/cucumber-framework": "^6.1.14",
     "@wdio/local-runner": "^6.1.16",
