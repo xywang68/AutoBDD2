@@ -1,4 +1,5 @@
 const FrameworkPath = process.env.FrameworkPath;
+var cucumberJsReporter = require('wdio-cucumberjs-json-reporter').default;
 const framework_libs = require(FrameworkPath + '/framework/libs/framework_libs');
 const screen_session = require(FrameworkPath + '/framework/libs/screen_session');
 const browser_session = require(FrameworkPath + '/framework/libs/browser_session');
@@ -170,11 +171,12 @@ const frameworkHooks = {
       // show browser log
       if (process.env.BROWSERLOG == 1) {
         browser_session.showErrorLog(browser);
-      }  
+      }
     }
   },
 
   AfterScenario: function(scenario, result) {
+    
     // scenario status
     if (result.status == 'passed') {
       currentScenarioStatus = 'Passed';
@@ -201,25 +203,25 @@ const frameworkHooks = {
     var scenarioBeginImage_tag, scenarioEndImage_tag, video_tag, runlog_tag;
     scenarioBeginImage_tag = framework_libs.getHtmlReportTags(currentScenarioName, 'Step', 1)[0];
     [scenarioEndImage_tag, video_tag, runlog_tag] = framework_libs.getHtmlReportTags(currentScenarioName, currentScenarioStatus, currentStepNumber);
-    scenario.attach(runlog_tag, 'text/html');
-    
+    cucumberJsReporter.attach(runlog_tag, 'text/html');
     if (process.env.MOVIE == 1) { // MOVIE == 1 attach movie
-      scenario.attach(video_tag, 'text/html');
+      cucumberJsReporter.attach(video_tag, 'text/html');
     }
-    
+  
     if (process.env.SCREENSHOT == 1) { // SCREESHOT == 1 attach final screenshot
-      scenario.attach(scenarioEndImage_tag, 'text/html');
+      cucumberJsReporter.attach(scenarioEndImage_tag, 'text/html');
     } else if (process.env.SCREENSHOT == 2) { // SCREESHOT == 2 attach first and final screenshots
-      scenario.attach(scenarioBeginImage_tag, 'text/html');
-      scenario.attach(scenarioEndImage_tag, 'text/html');
+      cucumberJsReporter.attach(scenarioBeginImage_tag, 'text/html');
+      cucumberJsReporter.attach(scenarioEndImage_tag, 'text/html');
     } else if (process.env.SCREENSHOT == 3) { // SCREESHOT == 3 attach all step screenshots, skipped steps will get empty refernce
       for (stepIndex = 1; stepIndex <= currentStepNumber; stepIndex++) {
         const stepImage_tag = framework_libs.getHtmlReportTags(currentScenarioName, 'Step', stepIndex)[0];
-        scenario.attach(stepImage_tag, 'text/html');
+        cucumberJsReporter.attach(stepImage_tag, 'text/html');
       }
-      scenario.attach(scenarioEndImage_tag, 'text/html');
+      cucumberJsReporter.attach(scenarioEndImage_tag, 'text/html');
     }
-    
+
+
     // need to perform these steps before tear down RDP
     changeBrowserZoom(100);
 
