@@ -33,7 +33,7 @@ module.exports = (type, targetElementIndex, targetElement, parentElementIndex, p
     } else {
         targetElementId = browser.$$(targetElement)[targetElementIndexInt].elementId;
     }
-    retrivedValue = browser.elementIdText(targetElementId).value;
+    retrivedValue = browser.getElementText(targetElementId);
     process.env[varName] = (type == 'number') ? retrivedValue.match(/\d+/)[0] : retrivedValue;
     console.log(`assigned "${process.env[varName]}" to ENV:${varName}`);
 };

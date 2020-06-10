@@ -19,7 +19,7 @@ const checkElement = (targetElementId, targetElementIndex, targetElement, parent
             break;
         case 'text':
         case 'regex':
-            retrivedValue = browser.elementIdText(targetElementId).value;
+            retrivedValue = browser.getElementText(targetElementId);
     }
     if (boolFalseCase) {
         switch (action) {
