@@ -10,7 +10,7 @@
   "main": "index.js",
   "scripts": {
     "postinstall": ". .autoPathrc.sh; cd ./test-projects/simple-test/test-init; npx wdio abdd.js",
-    "test-run": ". .autoPathrc.sh; rm -rf test-projects/simple-test/bdd_reports/build-test; autorunner.py --project simple-test --reportpath build-test --movie 1 --tagstring '~@Init and ~@Report'; cat test-projects/simple-test/bdd_reports/build-test/*/*.run",
+    "test-run": ". .autoPathrc.sh; rm -rf test-projects/simple-test/bdd_reports/build-test; autorunner.py --project simple-test --reportpath build-test --movie 1 -- --cucumberOpts.tags='@Init and not @Report'; cat test-projects/simple-test/bdd_reports/build-test/*/*.run",
     "test-report": ". .autoPathrc.sh; cd ./test-projects/simple-test/test-report; npx wdio abdd.js",
     "test": "npm run postinstall; npm run test-run; npm run test-report"
   },
