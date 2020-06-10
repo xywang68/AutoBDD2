@@ -47,7 +47,7 @@ optionFlags = {
     },
     testPlatformVer: {
         type: 'string',
-        default: 'Ubuntu 18.04'
+        default: 'Ubuntu 20.04'
     },
     testDevice: {
         type: 'string',

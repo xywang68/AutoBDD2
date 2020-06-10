@@ -590,7 +590,7 @@ class AbddAutoRun:
             '--reportName=\'AutoBDD HTML Report\' ' +  \
             '--reportTitle=' + self.project + ' ' + \
             '--testPlatform=' + self.platform + ' ' + \
-            '--testPlatformVer=\'Ubuntu 18.04\' ' + \
+            '--testPlatformVer=\'Ubuntu 20.04\' ' + \
             '--testBrowser=' + report_browser + ' ' + \
             '--testBrowserVer=' + report_browser_ver + ' ' + \
             '--testThreads=' + self.parallel + ' ' + \
